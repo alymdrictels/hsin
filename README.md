@@ -2,10 +2,12 @@
 
 http://hsin.hr/honi/
 
-Potreban je PHP 5.6+
+Potreban je PHP 5.6+ te neki noviji g++
 
-U direktoriju projekta pokrenuti
+U direktoriju projekta pokrenuti:
 >  ./import-testcases.sh
 
 Iza toga je dovoljno unijeti npr.:
 > ./test simon
+
+ Eventualno ```chmod +x``` na oba.
