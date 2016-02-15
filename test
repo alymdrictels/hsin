@@ -1,0 +1,55 @@
+#!/usr/bin/php
+<?php
+
+$args = $_SERVER['argv'];
+
+array_shift($args);
+
+$taskName = array_shift($args);
+
+$solutionPath = array_pop(glob("*/{$taskName}.cpp"));
+$subPath = array_shift(explode('/',$solutionPath));
+
+/* we don't care what happens to the output binary after the tests are run */
+if (!empty($solutionPath) && empty(exec("g++ {$solutionPath} -std=c++0x -O2 -static -s -lm")))
+{
+  /* try test cases */
+
+  $testCases = glob("{$subPath}/tests/{$taskName}/*in*");
+
+
+  if (empty($testCases)) {
+    echo "test cases not found\n"; break;
+  } else {
+    $testCases = array_filter($testCases, function($val){
+      return strpos($val,'dummy') === false;
+    });
+
+    /* sort them nicely by index*/
+    usort($testCases, function($a,$b) {
+      return array_pop(explode('.', $a)) > array_pop(explode('.', $b));
+    });
+
+    foreach($testCases as $testcase) {
+      $str = explode('.', $testcase);
+      $index = array_pop($str);
+      $testName = array_pop(explode('/', array_shift($str)));
+
+      // trim the expected output to avoid CRLF troubles
+      $expected = trim(file_get_contents("{$subPath}/tests/{$taskName}/{$testName}.out.{$index}"));
+      $actual = (exec("./a.out < {$testcase}"));
+
+      // identity comparison looks really professional, so overuse it blatantly
+      if ($expected === $actual) {
+        // ditto for printf in PHP code
+        printf("\ntest case %3s OK", $index);
+      } else {
+        printf( "\ntest case %3s FAIL\n expected %s\ngot %s\n", $index, $expected, $actual);
+      }
+    }
+  }
+} else {
+  echo "nope. try again\n";
+}
+
+echo PHP_EOL;
