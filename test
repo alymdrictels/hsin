@@ -5,18 +5,20 @@ $args = $_SERVER['argv'];
 
 array_shift($args);
 
-$taskName = array_shift($args);
+list($namespace, $taskname) = explode('/', array_shift($args));
 
-$solutionPath = array_pop(glob("*/{$taskName}.cpp"));
-$subPath = array_shift(explode('/',$solutionPath));
+$solutionPath = array_pop(glob("{$namespace}/{$taskname}.cpp"));
 
-/* we don't care what happens to the output binary after the tests are run */
-if (!empty($solutionPath) && empty(exec("g++ {$solutionPath} -std=c++0x -O2 -static -s -lm")))
+if (!empty($solutionPath))
 {
+  exec("g++ {$solutionPath} -std=c++0x -O2 -static -s -lm", $o, $status);
+  if ($status !== 0) {
+    echo 'failure compiling';
+    return 1;
+  }
   /* try test cases */
 
-  $testCases = glob("{$subPath}/tests/{$taskName}/*in*");
-
+  $testCases = glob("{$namespace}/tests/{$taskname}/*in*");
 
   if (empty($testCases)) {
     echo "test cases not found\n"; break;
@@ -30,21 +32,34 @@ if (!empty($solutionPath) && empty(exec("g++ {$solutionPath} -std=c++0x -O2 -sta
       return array_pop(explode('.', $a)) > array_pop(explode('.', $b));
     });
 
-    foreach($testCases as $testcase) {
+    foreach($testCases as $index => $testcase) {
       $str = explode('.', $testcase);
       $index = array_pop($str);
       $testName = array_pop(explode('/', array_shift($str)));
 
-      // trim the expected output to avoid CRLF troubles
-      $expected = trim(file_get_contents("{$subPath}/tests/{$taskName}/{$testName}.out.{$index}"));
-      $actual = (exec("./a.out < {$testcase}"));
+      $expected = trim(file_get_contents("{$namespace}/tests/{$taskname}/{$testName}.out.{$index}"));
+      $expected = explode(PHP_EOL, $expected);
+      $actual = null;
+      exec("./a.out < {$testcase}", $actual);
 
-      // identity comparison looks really professional, so overuse it blatantly
-      if ($expected === $actual) {
-        // ditto for printf in PHP code
-        printf("\ntest case %3s OK", $index);
-      } else {
-        printf( "\ntest case %3s FAIL\n expected %s\ngot %s\n", $index, $expected, $actual);
+      $nExpected = count($expected);
+      $nActual = count($actual);
+
+      $len = $nActual > $nExpected ? $nActual : $nExpected;
+      printf("%15s %15s %15s\n",
+       "test $index", 'actual', 'expected', 'status'
+     );
+
+      for ($i = 0; $i < $len; $i++) {
+        $a = &$expected[$i];
+        $b = &$actual[$i];
+        printf("%15s %15s %15s\n",
+         isset($b) ? trim($b) : '',
+         isset($a) ? trim($a) : '',
+         (isset($a) && isset($b))
+         ? (trim($a) == trim($b) ? 'OK' : 'X') : ''
+        );
+        unset($a, $b);
       }
     }
   }
@@ -52,4 +67,4 @@ if (!empty($solutionPath) && empty(exec("g++ {$solutionPath} -std=c++0x -O2 -sta
   echo "nope. try again\n";
 }
 
-echo PHP_EOL;
+return 0;

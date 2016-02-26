@@ -8,6 +8,4 @@ U direktoriju projekta pokrenuti:
 >  ./import-testcases.sh
 
 Iza toga je dovoljno unijeti npr.:
-> ./test simon
-
- Eventualno ```chmod +x``` na oba.
+> ./test kolo1/simon
