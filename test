@@ -7,7 +7,8 @@ array_shift($args);
 
 list($namespace, $taskname) = explode('/', array_shift($args));
 
-$solutionPath = array_pop(glob("{$namespace}/{$taskname}.cpp"));
+$tmp = glob("{$namespace}/{$taskname}.cpp");
+$solutionPath = array_pop($tmp);
 
 if (!empty($solutionPath))
 {
@@ -21,7 +22,7 @@ if (!empty($solutionPath))
   $testCases = glob("{$namespace}/tests/{$taskname}/*in*");
 
   if (empty($testCases)) {
-    echo "test cases not found\n"; break;
+    echo "test cases not found\n"; return 1;
   } else {
     $testCases = array_filter($testCases, function($val){
       return strpos($val,'dummy') === false;
@@ -29,13 +30,15 @@ if (!empty($solutionPath))
 
     /* sort them nicely by index*/
     usort($testCases, function($a,$b) {
-      return array_pop(explode('.', $a)) > array_pop(explode('.', $b));
+      $t1 = explode('.', $a); $t2 = explode('.', $b);
+      return array_pop($t1) > array_pop($t2);
     });
 
     foreach($testCases as $index => $testcase) {
       $str = explode('.', $testcase);
       $index = array_pop($str);
-      $testName = array_pop(explode('/', array_shift($str)));
+      $tmp = explode('/',array_shift($str));
+      $testName = array_pop($tmp);
 
       $expected = trim(file_get_contents("{$namespace}/tests/{$taskname}/{$testName}.out.{$index}"));
       $expected = explode(PHP_EOL, $expected);
@@ -51,8 +54,8 @@ if (!empty($solutionPath))
      );
 
       for ($i = 0; $i < $len; $i++) {
-        $a = &$expected[$i];
-        $b = &$actual[$i];
+        $a = $expected[$i];
+        $b = $actual[$i];
         printf("%15s %15s %15s\n",
          isset($b) ? trim($b) : '',
          isset($a) ? trim($a) : '',
