@@ -1,4 +1,3 @@
-#!/usr/bin/php
 <?php
 
 $args = $_SERVER['argv'];
